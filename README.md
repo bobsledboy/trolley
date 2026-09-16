@@ -1,10 +1,14 @@
 # Trolley
 
-A Discord bot that captures recipes from links and photos, plans your week
-from a rotation of favourites, builds a shopping list, and fills your
-Woolworths basket for you.
+A self-hosted Discord bot that captures recipes from links and photos, plans
+your week from a rotation of favourites, builds a shopping list, and fills
+your Woolworths basket for you.
 
-Full design doc: [`docs/design.pdf`](docs/design.pdf).
+Each deployment is its own thing: your own Discord bot application, your own
+database, your own Woolworths account connected via `/retailer connect` once
+that's built. Nothing about one installation is shared with another — see
+[`docs/design.pdf`](docs/design.pdf) for the full design, and
+[`LICENSE`](LICENSE) (MIT) for terms.
 
 ## Status — Phase 1
 
@@ -55,24 +59,22 @@ integration, substitutions. See the design doc's phased build plan.
 Every push to `main` builds an image and publishes it to
 `ghcr.io/bobsledboy/trolley:latest` (see
 [`.github/workflows/docker-publish.yml`](.github/workflows/docker-publish.yml)) —
-Unraid only ever pulls that image, it never builds from source.
+Unraid only ever pulls that image, it never builds from source. The package
+is public, so no registry login is needed.
 
-1. The package is private by default. Either make it public (on GitHub:
-   the package's page → **Package settings** → **Change visibility**), or,
-   to keep it private, log in to the registry on Unraid first:
-
-   ```bash
-   docker login ghcr.io -u bobsledboy
-   ```
-
-   using a [personal access token](https://github.com/settings/tokens) with
-   `read:packages` scope as the password.
-2. On the Unraid share, create `/mnt/user/appdata/trolley/` containing just
-   two files: [`docker-compose.unraid.yml`](docker-compose.unraid.yml)
-   (rename it to `docker-compose.yml` there) and a `.env` with your real
-   `DISCORD_BOT_TOKEN` and `DATABASE_URL=postgresql://trolley:trolley@db:5432/trolley`.
-3. In the **Compose Manager** plugin, add a stack pointing at that folder
-   and hit **Up**. It'll pull the image and start Postgres alongside it,
-   storing its data under `/mnt/user/appdata/trolley/pgdata`.
-4. To pick up a new build later, **Pull** then **Up** again in Compose
-   Manager — no rebuild happens on the box.
+1. Install the **Compose Manager** plugin from Community Applications.
+2. Add a new stack sourced from this repository
+   (`https://github.com/bobsledboy/trolley`) — Compose Manager can pull a
+   compose file straight from a Git repo. Point it at
+   [`docker-compose.unraid.yml`](docker-compose.unraid.yml) specifically
+   (it's the deploy-time variant that pulls the published image rather than
+   building from source, unlike the root `docker-compose.yml` used for local
+   development). If your Compose Manager version can't source from Git,
+   copy that one file to `/mnt/user/appdata/trolley/docker-compose.yml` on
+   the Unraid share instead.
+3. Add a `.env` alongside it with your own `DISCORD_BOT_TOKEN` and
+   `DATABASE_URL=postgresql://trolley:trolley@db:5432/trolley`.
+4. Hit **Up**. It pulls the image and starts Postgres alongside it, storing
+   data under `/mnt/user/appdata/trolley/pgdata`.
+5. To pick up a new build later, **Pull** then **Up** again — no rebuild
+   happens on the box.
