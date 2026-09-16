@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+import os
 import re
 from dataclasses import dataclass
 
@@ -13,7 +14,7 @@ from scraper.extractor import ExtractionError, ExtractedRecipe, extract_sync
 log = logging.getLogger("trolley.recipes")
 
 URL_RE = re.compile(r"https?://\S+")
-CAPTURE_CHANNEL_NAME = "recipes"
+CAPTURE_CHANNEL_NAME = os.environ.get("RECIPE_CHANNEL_NAME", "recipes")
 SAVE_EMOJI = "✅"
 DISCARD_EMOJI = "❌"
 

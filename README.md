@@ -22,10 +22,16 @@ integration, substitutions. See the design doc's phased build plan.
 ## Setup
 
 1. Create a Discord application and bot user at the
-   [Discord Developer Portal](https://discord.com/developers/applications),
-   invite it to your server. Under **Bot**, enable the **Message Content
-   Intent** — without it Trolley can't read the links you paste.
-2. `cp .env.example .env` and fill in `DISCORD_BOT_TOKEN`.
+   [Discord Developer Portal](https://discord.com/developers/applications).
+   Under **Bot**, enable the **Message Content Intent** — without it Trolley
+   can't read the links you paste. Under **OAuth2 → URL Generator**, check
+   the `bot` and `applications.commands` scopes and the **Send Messages**,
+   **Read Message History**, **Add Reactions**, **Embed Links** bot
+   permissions, then open the generated URL to invite it to your server.
+2. `cp .env.example .env` and fill in `DISCORD_BOT_TOKEN`. Trolley watches
+   DMs and any channel named `#recipes` for links by default — set
+   `RECIPE_CHANNEL_NAME` in `.env` if you'd rather use a different channel
+   name.
 3. Run it with Docker (bot + Postgres together):
 
    ```bash
