@@ -10,6 +10,9 @@ that's built. Nothing about one installation is shared with another — see
 [`docs/design.pdf`](docs/design.pdf) for the full design, and
 [`LICENSE`](LICENSE) (MIT) for terms.
 
+It's a single container — Postgres runs inside it via `supervisord`, so
+there's nothing else to stand up alongside it.
+
 ## Status — Phase 1
 
 Recipe capture from links is working:
@@ -36,19 +39,11 @@ integration, substitutions. See the design doc's phased build plan.
    DMs and any channel named `#recipes` for links by default — set
    `RECIPE_CHANNEL_NAME` in `.env` if you'd rather use a different channel
    name.
-3. Run it with Docker (bot + Postgres together):
+3. Run it with Docker Compose — same image as production, Postgres bundled
+   inside it, nothing else to start:
 
    ```bash
    docker compose up --build
-   ```
-
-   Or locally, against a Postgres you run yourself — start one with
-   `docker compose up -d db`, point `DATABASE_URL` in `.env` at
-   `postgresql://trolley:trolley@localhost:5432/trolley`, then:
-
-   ```bash
-   pip install -r requirements.txt
-   python -m bot.main
    ```
 
 4. In Discord, run `/ping` to check it's alive, then paste a recipe link in
@@ -56,25 +51,21 @@ integration, substitutions. See the design doc's phased build plan.
 
 ## Running on Unraid
 
-Every push to `main` builds an image and publishes it to
+Every push to `main` builds this same image and publishes it to
 `ghcr.io/bobsledboy/trolley:latest` (see
 [`.github/workflows/docker-publish.yml`](.github/workflows/docker-publish.yml)) —
-Unraid only ever pulls that image, it never builds from source. The package
-is public, so no registry login is needed.
+Unraid only ever pulls it, never builds from source. The package is public,
+so no registry login is needed. No Compose Manager, no second container for
+Postgres — just:
 
-1. Install the **Compose Manager** plugin from Community Applications.
-2. Add a new stack sourced from this repository
-   (`https://github.com/bobsledboy/trolley`) — Compose Manager can pull a
-   compose file straight from a Git repo. Point it at
-   [`docker-compose.unraid.yml`](docker-compose.unraid.yml) specifically
-   (it's the deploy-time variant that pulls the published image rather than
-   building from source, unlike the root `docker-compose.yml` used for local
-   development). If your Compose Manager version can't source from Git,
-   copy that one file to `/mnt/user/appdata/trolley/docker-compose.yml` on
-   the Unraid share instead.
-3. Add a `.env` alongside it with your own `DISCORD_BOT_TOKEN` and
-   `DATABASE_URL=postgresql://trolley:trolley@db:5432/trolley`.
-4. Hit **Up**. It pulls the image and starts Postgres alongside it, storing
-   data under `/mnt/user/appdata/trolley/pgdata`.
-5. To pick up a new build later, **Pull** then **Up** again — no rebuild
-   happens on the box.
+1. Docker tab → **Add Container**. Repository: `ghcr.io/bobsledboy/trolley:latest`.
+2. Add a **Variable**: Key `DISCORD_BOT_TOKEN`, Value your real token.
+3. Add a **Path**: Container Path `/var/lib/postgresql/data`, Host Path
+   `/mnt/user/appdata/trolley/pgdata` — this is where the bundled Postgres
+   keeps its data, so it survives container updates and shows up under
+   Unraid's normal appdata backups.
+4. Apply. First boot takes a few extra seconds while Postgres initializes;
+   check the container's log for `Logged in as Trolley#...` to confirm it's
+   up.
+5. To pick up a new build later: pull the image again and restart the
+   container from the Docker tab.
