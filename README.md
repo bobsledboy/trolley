@@ -49,3 +49,30 @@ integration, substitutions. See the design doc's phased build plan.
 
 4. In Discord, run `/ping` to check it's alive, then paste a recipe link in
    a DM or `#recipes` channel.
+
+## Running on Unraid
+
+Every push to `main` builds an image and publishes it to
+`ghcr.io/bobsledboy/trolley:latest` (see
+[`.github/workflows/docker-publish.yml`](.github/workflows/docker-publish.yml)) —
+Unraid only ever pulls that image, it never builds from source.
+
+1. The package is private by default. Either make it public (on GitHub:
+   the package's page → **Package settings** → **Change visibility**), or,
+   to keep it private, log in to the registry on Unraid first:
+
+   ```bash
+   docker login ghcr.io -u bobsledboy
+   ```
+
+   using a [personal access token](https://github.com/settings/tokens) with
+   `read:packages` scope as the password.
+2. On the Unraid share, create `/mnt/user/appdata/trolley/` containing just
+   two files: [`docker-compose.unraid.yml`](docker-compose.unraid.yml)
+   (rename it to `docker-compose.yml` there) and a `.env` with your real
+   `DISCORD_BOT_TOKEN` and `DATABASE_URL=postgresql://trolley:trolley@db:5432/trolley`.
+3. In the **Compose Manager** plugin, add a stack pointing at that folder
+   and hit **Up**. It'll pull the image and start Postgres alongside it,
+   storing its data under `/mnt/user/appdata/trolley/pgdata`.
+4. To pick up a new build later, **Pull** then **Up** again in Compose
+   Manager — no rebuild happens on the box.
